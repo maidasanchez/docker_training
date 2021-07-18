@@ -1,0 +1,72 @@
+version: "3"
+
+services:
+        nodeapp:
+                #image: node:14
+                build:
+                        context: .
+                        dockerfile: multistage.Dockerfile
+                container_name: nodeappC
+                environment: 
+                        - PORT=9001
+                ports:
+                        - 9001:9001
+                networks:
+                        - nodenet
+                volumes :
+                        - nodeapp_vol:/app
+        sonarqube:
+                image: sonarqube:8.9.1-community
+                container_name: sonarqubeC
+                environment: 
+                        - SONAR_JDBC_URL=jdbc:postgresql://postgresql:5432/sonarqube-db
+                        - SONAR_JDBC_USER=admin
+                        - SONAR_JDBC_PASSWORD=admin
+                restart: always
+                ports:
+                        - 9090:9090
+                depends_on:
+                        - postgresDB
+                networks:
+                        - nodenet
+                volumes:
+                        - nodeapp_vol:/app 
+        jenkins:
+                image: jenkins/jenkins:lts
+                container_name: jenkinsC
+                restart: always
+                ports:
+                        - 8080:8080
+                networks:
+                        - nodenet
+                volumes:
+                        - nodeapp_vol:/app
+        nexus:
+                image: sonatype/nexus3:latest
+                container_name: nexusC
+                restart: always
+                ports:
+                        - 8081:8081
+                networks:
+                        - nodenet
+                volumes:
+                        - nodeapp_vol:/app
+        postgresDB:
+                image: postgres:latest
+                container_name: postgresDB
+                restart: always
+                environment:
+                        - POSTGRES_USER=admin
+                        - POSTGRES_PASSWORD=admin
+                        - POSTGRES_DB=sonarqube-db
+                ports:
+                        - 5432:5432
+                networks:
+                        - nodenet
+                volumes:
+                        - nodeapp_vol:/app
+volumes: 
+        nodeapp_vol:
+networks:
+        nodenet:
+
